@@ -11,6 +11,9 @@
 #           | 2019.11.05
 #           | 2021.02.24
 #
+#   name    | joseph yu
+#   updated | 2021.7.15
+#
 #   depends on:
 #       BEDtools v2.23.0-20 via pybedtools
 #       /dors/capra_lab/data/dna/[species]/[species]/[species]_trim.chrom.sizes
@@ -59,6 +62,24 @@ arg_parser.add_argument("--elem_wise", action='store_true', default=False,
 arg_parser.add_argument("--by_hap_block", action='store_true', default=False,
                         help='perform haplotype-block overlaps; default=False')
 
+arg_parser.add_argument("--GC_option", action='store_true', default=False,
+                        help='perform shuffling with regions of similar GC \
+                        content; default=False')
+
+def restricted_float(x):
+    try:
+        x = float(x)
+    except ValueError:
+        raise argparse.ArgumentTypeError("%r not a floating-point literal" % (x,))
+
+    if x <= 0.0:
+        raise argparse.ArgumentTypeError("%r not a positive percentage" % (x,))
+    return x
+
+arg_parser.add_argument("--GC_margin", type=restricted_float, default=0.1,
+                        help='adjust GC content allowed margin in GC_option; \
+                        default=0.1(10% GC content error margin)')
+
 args = arg_parser.parse_args()
 
 # save parameters
@@ -70,6 +91,8 @@ SPECIES = args.species
 ELEMENT = args.elem_wise
 HAPBLOCK= args.by_hap_block
 CUSTOM_BLIST = args.blacklist
+GC_CONTROL_OPT = args.GC_option
+GC_CONTROL_RANGE = args.GC_margin
 
 # calculate the number of threads
 if args.num_threads:
@@ -87,10 +110,16 @@ set_tempdir(os.getenv('ACCRE_RUNTIME_DIR', get_tempdir()))
 def loadConstants(species, custom=''):
     if custom is not None:
         return custom
-    return {'hg19': "/dors/capra_lab/users/bentonml/data/dna/hg19/hg19_blacklist_gap.bed",
-            'hg38': "/dors/capra_lab/users/bentonml/data/dna/hg38/hg38_blacklist_gap.bed",
-            'mm10': "/dors/capra_lab/users/bentonml/data/dna/mm10/mm10_blacklist_gap.bed",
-            'dm3' : "/dors/capra_lab/data/dna/fly/dm3-blacklist.bed"
+    #return {'hg19': "/dors/capra_lab/users/bentonml/data/dna/hg19/hg19_blacklist_gap.bed",
+    #        'hg38': "/dors/capra_lab/users/bentonml/data/dna/hg38/hg38_blacklist_gap.bed",
+    #        'mm10': "/dors/capra_lab/users/bentonml/data/dna/mm10/mm10_blacklist_gap.bed",
+    #        'dm3' : "/dors/capra_lab/data/dna/fly/dm3-blacklist.bed"
+    #        }[species]
+
+    return {'hg19' : "./blackListFile/hg19_blacklist_gap.bed",
+            'hg38' : "./blackListFile/hg38_blacklist_gap.bed",
+            'mm10' : "./blackListFile/mm10_blacklist_gap.bed",
+            'dm3'  : "./blackListFile/dm3_blacklist_gap.bed", 
             }[species]
 
 
