@@ -187,6 +187,7 @@ def calculateExpected_with_GC(annotation, test, elementwise, hapblock, species, 
     try:
         if GC_option:
             # use GC_CTRL_RANGE to set the margin of error for GC content calculation
+            @TODO
             pass        
             
         else:
