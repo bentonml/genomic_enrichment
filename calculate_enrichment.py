@@ -66,6 +66,7 @@ arg_parser.add_argument("--GC_option", action='store_true', default=False,
                         help='perform shuffling with regions of similar GC \
                         content; default=False')
 
+# setting limitations for argument input for GC_margin 
 def restricted_float(x):
     try:
         x = float(x)
@@ -80,6 +81,10 @@ arg_parser.add_argument("--GC_margin", type=restricted_float, default=0.1,
                         help='adjust GC content allowed margin in GC_option; \
                         default=0.1(10% GC content error margin)')
 
+arg_parser.add_argument("--GC_bp_resolution", type=int, default=100,
+                        help='adjust GC content bp resolution in GC_option; \
+                        default=100(bp)')
+
 args = arg_parser.parse_args()
 
 # save parameters
@@ -91,8 +96,9 @@ SPECIES = args.species
 ELEMENT = args.elem_wise
 HAPBLOCK= args.by_hap_block
 CUSTOM_BLIST = args.blacklist
-GC_CONTROL_OPT = args.GC_option
-GC_CONTROL_RANGE = args.GC_margin
+GC_CTRL_OPT = args.GC_option
+GC_CTRL_RANGE = args.GC_margin
+GC_CTRL_RESOLUTION = args.GC_bp_resolution
 
 # calculate the number of threads
 if args.num_threads:
@@ -180,10 +186,9 @@ def calculateExpected(annotation, test, elementwise, hapblock, species, custom, 
 def calculateExpected_with_GC(annotation, test, elementwise, hapblock, species, custom, GC_option, iters):
     try:
         if GC_option:
-            # use GC_CONTROL_RANGE to set the margin of error for GC content calculation
-                    
+            # use GC_CTRL_RANGE to set the margin of error for GC content calculation
+            pass        
             
-            pass
         else:
             rand_file = annotation.shuffle(genome=species, excl=BLACKLIST, chrom=True, noOverLapping=True)
 
@@ -239,7 +244,7 @@ def main(argv):
     '''
     # duplicate function for above code block with GC option enabled
     pool = Pool(num_threads)
-    partial_calcExp = partial(calculatedExpected_with_GC, BedTool(ANNONTATION_FILENAME), BedTool(TEST_FILENAME), ELEMENT, HAPBLOCK, SPECIES, CUSTOM_BLIST, GC_CONTROL_OPT)
+    partial_calcExp = partial(calculatedExpected_with_GC, BedTool(ANNONTATION_FILENAME), BedTool(TEST_FILENAME), ELEMENT, HAPBLOCK, SPECIES, CUSTOM_BLIST, GC_CTRL_OPT)
     exp_sum_list = pool.map(partial_calcExp, [i for i in range(ITERATIONS)])
 
     # wait for results to finish before calculating p-value
