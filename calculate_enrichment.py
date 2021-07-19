@@ -182,7 +182,7 @@ def calculateExpected_with_GC(annotation, test, elementwise, hapblock, species, 
         if GC_option:
             # use GC_CONTROL_RANGE to set the margin of error for GC content calculation
                     
-
+            
             pass
         else:
             rand_file = annotation.shuffle(genome=species, excl=BLACKLIST, chrom=True, noOverLapping=True)
@@ -231,8 +231,15 @@ def main(argv):
     obs_sum = calculateObserved(BedTool(ANNOTATION_FILENAME), BedTool(TEST_FILENAME), ELEMENT, HAPBLOCK)
 
     # create pool and run simulations in parallel
+    '''
     pool = Pool(num_threads)
     partial_calcExp = partial(calculateExpected, BedTool(ANNOTATION_FILENAME), BedTool(TEST_FILENAME), ELEMENT, HAPBLOCK, SPECIES, CUSTOM_BLIST)
+    exp_sum_list = pool.map(partial_calcExp, [i for i in range(ITERATIONS)])
+
+    '''
+    # duplicate function for above code block with GC option enabled
+    pool = Pool(num_threads)
+    partial_calcExp = partial(calculatedExpected_with_GC, BedTool(ANNONTATION_FILENAME), BedTool(TEST_FILENAME), ELEMENT, HAPBLOCK, SPECIES, CUSTOM_BLIST, GC_CONTROL_OPT)
     exp_sum_list = pool.map(partial_calcExp, [i for i in range(ITERATIONS)])
 
     # wait for results to finish before calculating p-value
