@@ -162,6 +162,45 @@ def calculateExpected(annotation, test, elementwise, hapblock, species, custom, 
 
     return exp_sum
 
+# 
+# caclulateExpected_with_GC
+#
+# created | 2021.7.19
+# updated | 2021.7.19
+#
+# Description:
+#       This function caclulates the expected intersection results with random
+#       shuffling
+#
+# input:
+#
+#
+# output: 
+#
+def calculateExpected_with_GC(annotation, test, elementwise, hapblock, species, custom, GC_option, iters):
+    try:
+        if GC_option:
+            # use GC_CONTROL_RANGE to set the margin of error for GC content calculation
+                    
+
+            pass
+        else:
+            rand_file = annotation.shuffle(genome=species, excl=BLACKLIST, chrom=True, noOverLapping=True)
+
+        if elementwise:
+            exp_sum = rand_file.intersect(test, wo=True).count()
+        else:
+            exp_intersect = rand_file.intersect(test, u=True)
+
+            if hapblock:
+                exp_sum = len(set(x[-2] for x in exp_intersect))
+            else:
+                for line in exp_intersect:
+                    exp_sum += int(line[-1])
+    except BEDToolsError:
+        exp_sum = -999
+
+    return exp_sum
 
 def calculateEmpiricalP(obs, exp_sum_list):
     mu = np.mean(exp_sum_list)
