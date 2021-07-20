@@ -192,6 +192,23 @@ def calculateObserved(annotation, test, elementwise, hapblock):
                 obs_sum += int(line[-1])
 
     return obs_sum
+# 
+# caclulateGCBlackListRegion
+#
+# updated | 2021.7.20
+#
+# Description:
+#       This function caclulates the blacklist regions from the GC content
+#       restrictions
+#
+# input:
+#
+#
+# output: 
+#
+d
+def calculationGCBlackListRegion():
+    pass
 
 # 
 # caclulateExpected
@@ -253,11 +270,23 @@ def calculateExpected(annotation, test, elementwise, hapblock, species, custom, 
 #
 def calculateExpected_with_GC(annotation, test, elementwise, hapblock, species, custom, GC_option, iters):
     try:
+        rand_file = NULL
         if GC_option:
             # use GC_CTRL_RANGE to set the margin of error for GC content calculation
             # @TODO
-            print("GC option enabled")        
+
+            GC_blacklist = calculateGCBlackListRegion()
+
+            # @TODO 
+            # merging the GC blacklist into the custom blacklist file, then
+            # writing to external file location
             
+            merged_blackList = 
+
+            # @TODO 
+            
+            rand_file = annotation.shuufle(genome=species, excl=merged_blackList, chrom=True, noOverLapping=True)
+
         else:
             rand_file = annotation.shuffle(genome=species, excl=BLACKLIST, chrom=True, noOverLapping=True)
 
