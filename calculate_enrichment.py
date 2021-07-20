@@ -68,7 +68,23 @@ arg_parser.add_argument("--GC_option", action='store_true', default=False,
                         help='perform shuffling with regions of similar GC \
                         content; default=False')
 
-# setting limitations for argument input for GC_margin 
+# 
+# restricted_float
+#
+# updated | 2021.7.19
+#
+# Description:
+#       This function is a wrapper for the float function to check for valid
+#       input for the --GC_margin option. 
+#
+#       Acceptable range: Non negative decimals 
+#
+# input:
+#       x: input commandline parameters for the --GC_margin option
+#
+# output: 
+#       returns the valid float parameters or raise an ArgumentTypeError.
+#
 def restricted_float(x):
     try:
         x = float(x)
@@ -114,23 +130,53 @@ set_tempdir(os.getenv('ACCRE_RUNTIME_DIR', get_tempdir()))
 
 ###
 #   functions
-###
+### 
+
+# 
+# loadConstants
+#
+# updated | 2021.7.19
+#
+# Description:
+#       This function returns the file path for the specified blacklist file.
+#
+# input:
+#       species: The species the genome build belongs to
+#       custom:  The custom black list file specified by the user
+#
+# output: 
+#       return: return the default blacklist file path from the blackListFile 
+#       dir matching the species specified or the custom blacklist file path.
+#
 def loadConstants(species, custom=''):
     if custom is not None:
         return custom
-    #return {'hg19': "/dors/capra_lab/users/bentonml/data/dna/hg19/hg19_blacklist_gap.bed",
-    #        'hg38': "/dors/capra_lab/users/bentonml/data/dna/hg38/hg38_blacklist_gap.bed",
-    #        'mm10': "/dors/capra_lab/users/bentonml/data/dna/mm10/mm10_blacklist_gap.bed",
-    #        'dm3' : "/dors/capra_lab/data/dna/fly/dm3-blacklist.bed"
-    #        }[species]
+    else:
+        return {'hg19' : "./blackListFile/hg19_blacklist_gap.bed",
+                'hg38' : "./blackListFile/hg38_blacklist_gap.bed",
+                'mm10' : "./blackListFile/mm10_blacklist_gap.bed",
+                'dm3'  : "./blackListFile/dm3_blacklist_gap.bed", 
+                }[species]
 
-    return {'hg19' : "./blackListFile/hg19_blacklist_gap.bed",
-            'hg38' : "./blackListFile/hg38_blacklist_gap.bed",
-            'mm10' : "./blackListFile/mm10_blacklist_gap.bed",
-            'dm3'  : "./blackListFile/dm3_blacklist_gap.bed", 
-            }[species]
-
-
+ 
+# 
+# caclulateObserved
+#
+# updated |
+#
+# Description:
+#       This function calculates the observed intersection results for the two
+#       bed files passed in.
+#
+# input:
+#       annotation:  BEDTOOL object with the intersection called on
+#       test:        BEDTOOL object passed into the intersection function 
+#       elementwise: flags for elementwise calculation
+#       hapblock:    flags for haplotype-block overlaps
+#
+# output: 
+#       returns the observed overlap between two bed files
+# 
 def calculateObserved(annotation, test, elementwise, hapblock):
     obs_sum = 0
 
@@ -147,7 +193,20 @@ def calculateObserved(annotation, test, elementwise, hapblock):
 
     return obs_sum
 
-
+# 
+# caclulateExpected
+#
+# updated | 2021.7.19
+#
+# Description:
+#       This function caclulates the expected intersection results with random
+#       shuffling
+#
+# input:
+#
+#
+# output: 
+#
 def calculateExpected(annotation, test, elementwise, hapblock, species, custom, iters):
     BLACKLIST = loadConstants(species, custom)
     exp_sum = 0
@@ -173,17 +232,24 @@ def calculateExpected(annotation, test, elementwise, hapblock, species, custom, 
 # 
 # caclulateExpected_with_GC
 #
-# created | 2021.7.19
 # updated | 2021.7.19
 #
 # Description:
 #       This function caclulates the expected intersection results with random
-#       shuffling
+#       shuffling.
 #
 # input:
+#       annotation:  BEDTOOL object with the intersection called on
+#       test:        BEDTOOL object passed into the intersection function 
+#       elementwise: flags for elementwise calculation
+#       hapblock:    flags for haplotype-block overlaps
+#       species:     species for the genome build used
+#       custom:      custom genome blacklist region file for shuffling
+#       GC_option:   flags for GC content controlled shuffling
+#       iters:       number of iteration for the calculation
 #
-#
-# output: 
+# output:
+#       returns the calculated overlaps the random shuffling intersection.
 #
 def calculateExpected_with_GC(annotation, test, elementwise, hapblock, species, custom, GC_option, iters):
     try:
@@ -196,9 +262,9 @@ def calculateExpected_with_GC(annotation, test, elementwise, hapblock, species, 
             rand_file = annotation.shuffle(genome=species, excl=BLACKLIST, chrom=True, noOverLapping=True)
 
         if elementwise:
-            exp_sum = rand_file.intersect(test, wo=True).count()
+            exp_sum = rand_file.intersect(test, u=True).count()
         else:
-            exp_intersect = rand_file.intersect(test, u=True)
+            exp_intersect = rand_file.intersect(test, wo=True)
 
             if hapblock:
                 exp_sum = len(set(x[-2] for x in exp_intersect))
@@ -210,6 +276,21 @@ def calculateExpected_with_GC(annotation, test, elementwise, hapblock, species, 
 
     return exp_sum
 
+# 
+# caclulateExpected_with_GC
+#
+# updated | 
+#
+# Description:
+#       This function caclulates empirical P value for the observed vs expected
+#
+# input:
+#       obs:
+#       exp_sum_list:
+#
+# output: 
+#       returns the formatted result of the calulated P value
+#
 def calculateEmpiricalP(obs, exp_sum_list):
     mu = np.mean(exp_sum_list)
     sigma = np.std(exp_sum_list)
