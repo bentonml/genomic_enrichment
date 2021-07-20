@@ -68,9 +68,20 @@ arg_parser.add_argument("--GC_option", action='store_true', default=False,
                         help='perform shuffling with regions of similar GC \
                         content; default=False')
 
+# setting limitations for argument input for GC_margin 
+def restricted_float(x):
+    try:
+        x = float(x)
+    except ValueError:
+        raise argparse.ArgumentTypeError("%r not a floating-point literal" % (x,))
+
+    if x <= 0.0:
+        raise argparse.ArgumentTypeError("%r not a positive percentage" % (x,))
+    return x
+
 arg_parser.add_argument("--GC_margin", type=float, default=0.1,
                         help='adjust GC content allowed margin in GC_option; \
-                        default=0.1(10% GC content error margin)')
+                        default=0.1(10%% GC content error margin)')
 
 arg_parser.add_argument("--GC_bp_resolution", type=int, default=100,
                         help='adjust GC content bp resolution in GC_option; \
@@ -88,7 +99,7 @@ ELEMENT = args.elem_wise
 HAPBLOCK= args.by_hap_block
 CUSTOM_BLIST = args.blacklist
 GC_CTRL_OPT = args.GC_option
-GC_CTRL_RANGE = args.GC_margin
+# GC_CTRL_RANGE = args.GC_margin
 GC_CTRL_RESOLUTION = args.GC_bp_resolution
 
 # calculate the number of threads
