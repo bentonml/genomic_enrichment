@@ -99,7 +99,7 @@ ELEMENT = args.elem_wise
 HAPBLOCK= args.by_hap_block
 CUSTOM_BLIST = args.blacklist
 GC_CTRL_OPT = args.GC_option
-# GC_CTRL_RANGE = args.GC_margin
+GC_CTRL_RANGE = args.GC_margin
 GC_CTRL_RESOLUTION = args.GC_bp_resolution
 
 # calculate the number of threads
