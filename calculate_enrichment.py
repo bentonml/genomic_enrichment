@@ -68,18 +68,7 @@ arg_parser.add_argument("--GC_option", action='store_true', default=False,
                         help='perform shuffling with regions of similar GC \
                         content; default=False')
 
-# setting limitations for argument input for GC_margin 
-def restricted_float(x):
-    try:
-        x = float(x)
-    except ValueError:
-        raise argparse.ArgumentTypeError("%r not a floating-point literal" % (x,))
-
-    if x <= 0.0:
-        raise argparse.ArgumentTypeError("%r not a positive percentage" % (x,))
-    return x
-
-arg_parser.add_argument("--GC_margin", type=restricted_float, default=0.1,
+arg_parser.add_argument("--GC_margin", type=float, default=0.1,
                         help='adjust GC content allowed margin in GC_option; \
                         default=0.1(10% GC content error margin)')
 
@@ -189,8 +178,8 @@ def calculateExpected_with_GC(annotation, test, elementwise, hapblock, species, 
     try:
         if GC_option:
             # use GC_CTRL_RANGE to set the margin of error for GC content calculation
-            @TODO
-            pass        
+            # @TODO
+            print("GC option enabled")        
             
         else:
             rand_file = annotation.shuffle(genome=species, excl=BLACKLIST, chrom=True, noOverLapping=True)
