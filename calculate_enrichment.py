@@ -206,8 +206,7 @@ def calculateObserved(annotation, test, elementwise, hapblock):
 #
 # output: 
 #
-d
-def calculationGCBlackListRegion():
+def calculationGC_blackListRegion():
     pass
 
 # 
@@ -269,13 +268,17 @@ def calculateExpected(annotation, test, elementwise, hapblock, species, custom, 
 #       returns the calculated overlaps the random shuffling intersection.
 #
 def calculateExpected_with_GC(annotation, test, elementwise, hapblock, species, custom, GC_option, iters):
+    
+    BLACKLIST = loadConstants(species, custom)
+    exp_sum = 0 
+    
     try:
         rand_file = NULL
         if GC_option:
             # use GC_CTRL_RANGE to set the margin of error for GC content calculation
             # @TODO
 
-            GC_blacklist = calculateGCBlackListRegion()
+            GC_blacklist = calculateGC_blackListRegion()
 
             # @TODO 
             # merging the GC blacklist into the custom blacklist file, then
