@@ -95,7 +95,7 @@ def restricted_float(x):
         raise argparse.ArgumentTypeError("%r not a positive percentage" % (x,))
     return x
 
-arg_parser.add_argument("--GC_margin", type=float, default=0.1,
+arg_parser.add_argument("--GC_margin", type=restricted_float, default=0.1,
                         help='adjust GC content allowed margin in GC_option; \
                         default=0.1(10%% GC content error margin)')
 
