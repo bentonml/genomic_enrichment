@@ -156,7 +156,7 @@ def loadConstants(species, custom=''):
         return {'hg19' : "./blackListFile/hg19_blacklist_gap.bed",
                 'hg38' : "./blackListFile/hg38_blacklist_gap.bed",
                 'mm10' : "./blackListFile/mm10_blacklist_gap.bed",
-                'dm3'  : "./blackListFile/dm3_blacklist_gap.bed", 
+                'dm3'  : "./blackListFile/dm3_blacklist_gap.bed" 
                 }[species]
 
  
@@ -208,18 +208,23 @@ def calculateObserved(annotation, test, elementwise, hapblock):
 # output: 
 #
 def calculationGC_blackListRegion(species, GC_resolution, GC_range):
-    genomeFile = {'hg19' : './genomeGC/hg19_manual.txt',
-                  'hg38' : './genomeGC/hg38_manual.txt',
-                  'mm10' : './genomeGC/mm10_manual.txt',
-                  'dm3'  : './genomeGC/dm3_manual.txt'
-                  }[species]
+    genomeSizeFile = {'hg19' : './genomeGC/hg19_manual.txt',
+                      'hg38' : './genomeGC/hg38_manual.txt',
+                      'mm10' : './genomeGC/mm10_manual.txt',
+                      'dm3'  : './genomeGC/dm3_manual.txt'
+                      }[species]
     
     # Splitting genome into specified bp windows (continuous)
     splitBed = BedTool()
-    splitGenome = splitBed.window_maker(g=genomeFile, w=int(GC_resolution))
+    splitGenome = splitBed.window_maker(g=genomeSizeFile, w=int(GC_resolution))
 
     # calculating GC content for each 
-    GC_result = splitGenome.nucleotide_content()
+    genomeFasta = {'hg19' : './genomeFASTA/hg19.fa',
+                   'hg38' : './genomeFASTA/hg38.fa',
+                   'mm10' : './genomeFASTA/mm10.fa',
+                   'dm3'  : './genomeFASTA/dm3.fa'
+                   }[species]
+    GC_result = splitGenome.nucleotide_content(fi=genomeFasta)
 
 # 
 # caclulateExpected
