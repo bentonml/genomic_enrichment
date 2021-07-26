@@ -207,8 +207,19 @@ def calculateObserved(annotation, test, elementwise, hapblock):
 #
 # output: 
 #
-def calculationGC_blackListRegion():
-    pass
+def calculationGC_blackListRegion(species, GC_resolution, GC_range):
+    genomeFile = {'hg19' : './genomeGC/hg19_manual.txt',
+                  'hg38' : './genomeGC/hg38_manual.txt',
+                  'mm10' : './genomeGC/mm10_manual.txt',
+                  'dm3'  : './genomeGC/dm3_manual.txt'
+                  }[species]
+    
+    # Splitting genome into specified bp windows (continuous)
+    splitBed = BedTool()
+    splitGenome = splitBed.window_maker(g=genomeFile, w=int(GC_resolution))
+
+    # calculating GC content for each 
+    GC_result = splitGenome.nucleotide_content()
 
 # 
 # caclulateExpected
@@ -256,19 +267,21 @@ def calculateExpected(annotation, test, elementwise, hapblock, species, custom, 
 #       shuffling.
 #
 # input:
-#       annotation:  BEDTOOL object with the intersection called on
-#       test:        BEDTOOL object passed into the intersection function 
-#       elementwise: flags for elementwise calculation
-#       hapblock:    flags for haplotype-block overlaps
-#       species:     species for the genome build used
-#       custom:      custom genome blacklist region file for shuffling
-#       GC_option:   flags for GC content controlled shuffling
-#       iters:       number of iteration for the calculation
+#       annotation:    BEDTOOL object with the intersection called on
+#       test:          BEDTOOL object passed into the intersection function 
+#       elementwise:   flags for elementwise calculation
+#       hapblock:      flags for haplotype-block overlaps
+#       species:       species for the genome build used
+#       custom:        custom genome blacklist region file for shuffling
+#       GC_option:     flags for GC content controlled shuffling
+#       GC_range:
+#       GC_resolution:
+#       iters:         number of iteration for the calculation
 #
 # output:
 #       returns the calculated overlaps the random shuffling intersection.
 #
-def calculateExpected_with_GC(annotation, test, elementwise, hapblock, species, custom, GC_option, iters):
+def calculateExpected_with_GC(annotation, test, elementwise, hapblock, species, custom, GC_option, GC_range, GC_resolution, iters):
     
     BLACKLIST = loadConstants(species, custom)
     exp_sum = 0 
@@ -279,7 +292,7 @@ def calculateExpected_with_GC(annotation, test, elementwise, hapblock, species, 
             # use GC_CTRL_RANGE to set the margin of error for GC content calculation
             # @TODO
 
-            GC_blacklist = calculateGC_blackListRegion()
+            GC_blacklist = calculateGC_blackListRegion(species, GC_resolution, GC_range)
 
             # @TODO 
             # merging the GC blacklist into the custom blacklist file, then
@@ -361,7 +374,8 @@ def main(argv):
     '''
     # duplicate function for above code block with GC option enabled
     pool = Pool(num_threads)
-    partial_calcExp = partial(calculatedExpected_with_GC, BedTool(ANNONTATION_FILENAME), BedTool(TEST_FILENAME), ELEMENT, HAPBLOCK, SPECIES, CUSTOM_BLIST, GC_CTRL_OPT)
+    partial_calcExp = partial(calculatedExpected_with_GC,
+            BedTool(ANNONTATION_FILENAME), BedTool(TEST_FILENAME), ELEMENT, HAPBLOCK, SPECIES, CUSTOM_BLIST, GC_CTRL_OPT, GC_CTRL_RANGE, GC_CTRL_RESOLUTION)
     exp_sum_list = pool.map(partial_calcExp, [i for i in range(ITERATIONS)])
 
     # wait for results to finish before calculating p-value
