@@ -207,7 +207,7 @@ def calculateObserved(annotation, test, elementwise, hapblock):
 #
 # output: 
 #
-def calculationGC_blackListRegion(species, GC_resolution, GC_range):
+def calculationGC_blackListRegion(species, GC_resolution, GC_range, annotation):
     genomeSizeFile = {'hg19' : './genomeGC/hg19_manual.txt',
                       'hg38' : './genomeGC/hg38_manual.txt',
                       'mm10' : './genomeGC/mm10_manual.txt',
@@ -224,7 +224,12 @@ def calculationGC_blackListRegion(species, GC_resolution, GC_range):
                    'mm10' : './genomeFASTA/mm10.fa',
                    'dm3'  : './genomeFASTA/dm3.fa'
                    }[species]
-    GC_result = splitGenome.nucleotide_content(fi=genomeFasta)
+    genomeGC_result = splitGenome.nucleotide_content(fi=genomeFasta)
+    annotationGC_result = annotation.nucleotide_content(fi=genomeFasta)
+
+    # Finding undesired regions 
+    #for entry in GC_result:
+    #    if entry[4] 
 
 # 
 # caclulateExpected
@@ -297,7 +302,7 @@ def calculateExpected_with_GC(annotation, test, elementwise, hapblock, species, 
             # use GC_CTRL_RANGE to set the margin of error for GC content calculation
             # @TODO
 
-            GC_blacklist = calculateGC_blackListRegion(species, GC_resolution, GC_range)
+            GC_blacklist = calculateGC_blackListRegion(species, GC_resolution, GC_range, annotation)
 
             # @TODO 
             # merging the GC blacklist into the custom blacklist file, then
