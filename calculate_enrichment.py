@@ -29,6 +29,7 @@ import os
 import sys, traceback
 import argparse
 import datetime
+import math
 import numpy as np
 from functools import partial
 from multiprocessing import Pool
@@ -216,20 +217,49 @@ def calculationGC_blackListRegion(species, GC_resolution, GC_range, annotation):
     
     # Splitting genome into specified bp windows (continuous)
     splitBed = BedTool()
-    splitGenome = splitBed.window_maker(g=genomeSizeFile, w=int(GC_resolution))
+    coverageOverlap = trunc(GC_resolution / 2)
+    splitGenome = splitBed.window_maker(g=genomeSizeFile, w=int(GC_resolution), s=coverageOverlap)
 
-    # calculating GC content for each 
+    # calculating GC content for each window
     genomeFasta = {'hg19' : './genomeFASTA/hg19.fa',
                    'hg38' : './genomeFASTA/hg38.fa',
                    'mm10' : './genomeFASTA/mm10.fa',
                    'dm3'  : './genomeFASTA/dm3.fa'
                    }[species]
     genomeGC_result = splitGenome.nucleotide_content(fi=genomeFasta)
+
+    # calculating GC content for entry in annotation bed file
     annotationGC_result = annotation.nucleotide_content(fi=genomeFasta)
 
-    # Finding undesired regions 
-    #for entry in GC_result:
-    #    if entry[4] 
+    # calculating GC content summary stats for annotation bed files 
+    annotationGC = []
+    for entry in GC_result:
+        annotation.append(float(entry[4])) 
+
+    np_annotationGC = np.array(annotationGC)
+    median = np.median(np_annotationGC)
+
+    # @TODO
+    # report GC content summary statistical data
+
+
+    # finding regions in genome windows that fail to reach requirements
+    upperGC = median * (1 + GC_range)
+    lowerGC = median * (1 - GC_range)
+
+    GC_blacklist = []
+    for window in genomeGC_result:
+        if window[4] < lowerGC or window[4] > upperGC:
+            entry = []
+            entry.append(window[0])
+            entry.append(window[1])
+            entry.append(window[2])
+            
+            GC_blacklist.append(entry)
+
+    genomeGC_blacklist_Object = BedTool(GC_blacklist)
+
+    return genome_blacklist_Object
 
 # 
 # caclulateExpected
@@ -299,20 +329,15 @@ def calculateExpected_with_GC(annotation, test, elementwise, hapblock, species, 
     try:
         rand_file = NULL
         if GC_option:
-            # use GC_CTRL_RANGE to set the margin of error for GC content calculation
-            # @TODO
-
+            # BedTool object with GC content blacklist regions
             GC_blacklist = calculateGC_blackListRegion(species, GC_resolution, GC_range, annotation)
 
-            # @TODO 
             # merging the GC blacklist into the custom blacklist file, then
             # writing to external file location
             
-            merged_blackList = 
-
-            # @TODO 
+            merged_blackList = BLACKLIST.cat(GC_blacklist).saveas("./output/blackList.bed")
             
-            rand_file = annotation.shuufle(genome=species, excl=merged_blackList, chrom=True, noOverLapping=True)
+            rand_file = annotation.shuffle(genome=species, excl=merged_blackList, chrom=True, noOverLapping=True)
 
         else:
             rand_file = annotation.shuffle(genome=species, excl=BLACKLIST, chrom=True, noOverLapping=True)
