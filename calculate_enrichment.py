@@ -13,9 +13,7 @@
 #
 #   name    | joseph yu
 #   updated | 2021.7.15
-#           | 2021.7.19
-#           | 2021.7.20
-#           | 2021.7.21
+#           | 2021.8.3
 #
 #   depends on:
 #       BEDtools v2.23.0-20 via pybedtools
