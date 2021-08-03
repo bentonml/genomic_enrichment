@@ -206,7 +206,7 @@ def calculateObserved(annotation, test, elementwise, hapblock):
 #
 # output: 
 #
-def calculationGC_blackListRegion(species, GC_resolution, GC_range, annotation):
+def calculateGC_blackListRegion(species, GC_resolution, GC_range, annotation):
     genomeSizeFile = {'hg19' : './genomeGC/hg19_manual.txt',
                       'hg38' : './genomeGC/hg38_manual.txt',
                       'mm10' : './genomeGC/mm10_manual.txt',
@@ -215,7 +215,7 @@ def calculationGC_blackListRegion(species, GC_resolution, GC_range, annotation):
     
     # Splitting genome into specified bp windows (continuous)
     splitBed = BedTool()
-    coverageOverlap = trunc(GC_resolution / 2)
+    coverageOverlap = math.trunc(GC_resolution / 2)
     splitGenome = splitBed.window_maker(g=genomeSizeFile, w=int(GC_resolution), s=coverageOverlap)
 
     # calculating GC content for each window
@@ -325,7 +325,6 @@ def calculateExpected_with_GC(annotation, test, elementwise, hapblock, species, 
     exp_sum = 0 
     
     try:
-        rand_file = NULL
         if GC_option:
             # BedTool object with GC content blacklist regions
             GC_blacklist = calculateGC_blackListRegion(species, GC_resolution, GC_range, annotation)
@@ -407,8 +406,8 @@ def main(argv):
     '''
     # duplicate function for above code block with GC option enabled
     pool = Pool(num_threads)
-    partial_calcExp = partial(calculatedExpected_with_GC,
-            BedTool(ANNONTATION_FILENAME), BedTool(TEST_FILENAME), ELEMENT, HAPBLOCK, SPECIES, CUSTOM_BLIST, GC_CTRL_OPT, GC_CTRL_RANGE, GC_CTRL_RESOLUTION)
+    partial_calcExp = partial(calculateExpected_with_GC,
+            BedTool(ANNOTATION_FILENAME), BedTool(TEST_FILENAME), ELEMENT, HAPBLOCK, SPECIES, CUSTOM_BLIST, GC_CTRL_OPT, GC_CTRL_RANGE, GC_CTRL_RESOLUTION)
     exp_sum_list = pool.map(partial_calcExp, [i for i in range(ITERATIONS)])
 
     # wait for results to finish before calculating p-value
