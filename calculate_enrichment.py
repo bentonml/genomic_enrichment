@@ -207,6 +207,7 @@ def calculateObserved(annotation, test, elementwise, hapblock):
 # output: 
 #
 def calculateGC_blackListRegion(species, GC_resolution, GC_range, annotation):
+    print("running calculateGC_blackListRegion")
     genomeSizeFile = {'hg19' : './genomeGC/hg19_manual.txt',
                       'hg38' : './genomeGC/hg38_manual.txt',
                       'mm10' : './genomeGC/mm10_manual.txt',
@@ -214,11 +215,13 @@ def calculateGC_blackListRegion(species, GC_resolution, GC_range, annotation):
                       }[species]
     
     # Splitting genome into specified bp windows (continuous)
+    print("running window maker")
     splitBed = BedTool()
     coverageOverlap = math.trunc(GC_resolution / 2)
     splitGenome = splitBed.window_maker(g=genomeSizeFile, w=int(GC_resolution), s=coverageOverlap)
 
     # calculating GC content for each window
+    print("running GC content calculation")
     genomeFasta = {'hg19' : './genomeFASTA/hg19.fa',
                    'hg38' : './genomeFASTA/hg38.fa',
                    'mm10' : './genomeFASTA/mm10.fa',
@@ -230,9 +233,10 @@ def calculateGC_blackListRegion(species, GC_resolution, GC_range, annotation):
     annotationGC_result = annotation.nucleotide_content(fi=genomeFasta)
 
     # calculating GC content summary stats for annotation bed files 
+    print("ending GC content calculation")
     annotationGC = []
-    for entry in GC_result:
-        annotation.append(float(entry[4])) 
+    for entry in annotationGC_result:
+        annotationGC.append(float(entry[4])) 
 
     np_annotationGC = np.array(annotationGC)
     median = np.median(np_annotationGC)
@@ -247,7 +251,7 @@ def calculateGC_blackListRegion(species, GC_resolution, GC_range, annotation):
 
     GC_blacklist = []
     for window in genomeGC_result:
-        if window[4] < lowerGC or window[4] > upperGC:
+        if float(window[4]) < float(lowerGC) or float(window[4]) > float(upperGC):
             entry = []
             entry.append(window[0])
             entry.append(window[1])
@@ -257,7 +261,7 @@ def calculateGC_blackListRegion(species, GC_resolution, GC_range, annotation):
 
     genomeGC_blacklist_Object = BedTool(GC_blacklist)
 
-    return genome_blacklist_Object
+    return genomeGC_blacklist_Object
 
 # 
 # caclulateExpected
@@ -331,10 +335,11 @@ def calculateExpected_with_GC(annotation, test, elementwise, hapblock, species, 
 
             # merging the GC blacklist into the custom blacklist file, then
             # writing to external file location
-            
-            merged_blackList = BLACKLIST.cat(GC_blacklist).saveas("./output/blackList.bed")
-            
-            rand_file = annotation.shuffle(genome=species, excl=merged_blackList, chrom=True, noOverLapping=True)
+            print("running shuffle")
+            bedFile = BedTool(BLACKLIST)
+            merged_blackList = bedFile.cat(GC_blacklist).saveas("./output/blackList.bed")
+            file_name = "./output/blackList.bed"
+            rand_file = annotation.shuffle(genome=species, excl=file_name, chrom=True, noOverLapping=True)
 
         else:
             rand_file = annotation.shuffle(genome=species, excl=BLACKLIST, chrom=True, noOverLapping=True)
@@ -395,6 +400,7 @@ def main(argv):
     print('Observed\tExpected\tStdDev\tFoldChange\tp-value')
 
     # run initial intersection and save
+    print("runnning calculateOberved")
     obs_sum = calculateObserved(BedTool(ANNOTATION_FILENAME), BedTool(TEST_FILENAME), ELEMENT, HAPBLOCK)
 
     # create pool and run simulations in parallel
@@ -405,11 +411,13 @@ def main(argv):
 
     '''
     # duplicate function for above code block with GC option enabled
+    print("running calculateExpected_with_GC")
     pool = Pool(num_threads)
     partial_calcExp = partial(calculateExpected_with_GC,
             BedTool(ANNOTATION_FILENAME), BedTool(TEST_FILENAME), ELEMENT, HAPBLOCK, SPECIES, CUSTOM_BLIST, GC_CTRL_OPT, GC_CTRL_RANGE, GC_CTRL_RESOLUTION)
     exp_sum_list = pool.map(partial_calcExp, [i for i in range(ITERATIONS)])
 
+    print("Finish calculateExpected_with_GC")
     # wait for results to finish before calculating p-value
     pool.close()
     pool.join()
