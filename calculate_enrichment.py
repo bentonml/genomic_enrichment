@@ -408,8 +408,8 @@ def main(argv):
 
     '''
     # duplicate function for above code block with GC option enabled
+    GC_blacklist = None
     if GC_CTRL_OPT:
-        print("running calculateGC_blackListRegion")
         GC_blacklist = calculateGC_blackListRegion(SPECIES, GC_CTRL_RESOLUTION, GC_CTRL_RANGE, BedTool(ANNOTATION_FILENAME))
     print("running calculateExpected_with_GC")
     pool = Pool(num_threads)
