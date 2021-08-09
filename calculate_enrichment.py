@@ -323,22 +323,19 @@ def calculateExpected(annotation, test, elementwise, hapblock, species, custom, 
 # output:
 #       returns the calculated overlaps the random shuffling intersection.
 #
-def calculateExpected_with_GC(annotation, test, elementwise, hapblock, species, custom, GC_option, GC_range, GC_resolution, iters):
+def calculateExpected_with_GC(annotation, test, elementwise, hapblock, species, custom, GC_option, GC_blacklist, iters):
     
     BLACKLIST = loadConstants(species, custom)
     exp_sum = 0 
     
     try:
         if GC_option:
-            # BedTool object with GC content blacklist regions
-            GC_blacklist = calculateGC_blackListRegion(species, GC_resolution, GC_range, annotation)
-
             # merging the GC blacklist into the custom blacklist file, then
             # writing to external file location
             print("running shuffle")
             bedFile = BedTool(BLACKLIST)
-            merged_blackList = bedFile.cat(GC_blacklist).saveas("./output/blackList.bed")
-            file_name = "./output/blackList.bed"
+            merged_blackList = bedFile.cat(GC_blacklist).saveas("./blackList.bed")
+            file_name = "./blackList.bed"
             rand_file = annotation.shuffle(genome=species, excl=file_name, chrom=True, noOverLapping=True)
 
         else:
@@ -411,10 +408,12 @@ def main(argv):
 
     '''
     # duplicate function for above code block with GC option enabled
+    if GC_CTRL_OPT:
+        print("running calculateGC_blackListRegion")
+        GC_blacklist = calculateGC_blackListRegion(SPECIES, GC_CTRL_RESOLUTION, GC_CTRL_RANGE, BedTool(ANNOTATION_FILENAME))
     print("running calculateExpected_with_GC")
     pool = Pool(num_threads)
-    partial_calcExp = partial(calculateExpected_with_GC,
-            BedTool(ANNOTATION_FILENAME), BedTool(TEST_FILENAME), ELEMENT, HAPBLOCK, SPECIES, CUSTOM_BLIST, GC_CTRL_OPT, GC_CTRL_RANGE, GC_CTRL_RESOLUTION)
+    partial_calcExp = partial(calculateExpected_with_GC, BedTool(ANNOTATION_FILENAME), BedTool(TEST_FILENAME), ELEMENT, HAPBLOCK, SPECIES, CUSTOM_BLIST, GC_CTRL_OPT, GC_blacklist)
     exp_sum_list = pool.map(partial_calcExp, [i for i in range(ITERATIONS)])
 
     print("Finish calculateExpected_with_GC")
