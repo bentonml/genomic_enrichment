@@ -327,6 +327,7 @@ def calculateExpected_with_GC(annotation, test, elementwise, hapblock, species, 
     
     BLACKLIST = loadConstants(species, custom)
     exp_sum = 0 
+    rand_file = None
     
     try:
         if GC_option:
@@ -336,10 +337,10 @@ def calculateExpected_with_GC(annotation, test, elementwise, hapblock, species, 
             bedFile = BedTool(BLACKLIST)
             merged_blackList = bedFile.cat(GC_blacklist).saveas("./blackList.bed")
             file_name = "./blackList.bed"
-            rand_file = annotation.shuffle(genome=species, excl=file_name, chrom=True, noOverLapping=True)
+            rand_file = annotation.shuffle(genome=species, excl=file_name, chrom=True, noOverlapping=True)
 
         else:
-            rand_file = annotation.shuffle(genome=species, excl=BLACKLIST, chrom=True, noOverLapping=True)
+            rand_file = annotation.shuffle(genome=species, excl=BLACKLIST, chrom=True, noOverlapping=True)
 
         if elementwise:
             exp_sum = rand_file.intersect(test, u=True).count()
