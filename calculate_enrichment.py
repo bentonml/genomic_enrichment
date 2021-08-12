@@ -395,7 +395,6 @@ def calculateEmpiricalP(obs, exp_sum_list):
 def main(argv):
     # print header
     print('python {:s} {:s}'.format(' '.join(sys.argv), str(datetime.datetime.now())[:20]))
-    print('Observed\tExpected\tStdDev\tFoldChange\tp-value')
 
     # run initial intersection and save
     print("runnning calculateOberved")
@@ -427,6 +426,7 @@ def main(argv):
     exceptions = exp_sum_list.count(-999)
 
     # calculate empirical p value
+    print('Observed\tExpected\tStdDev\tFoldChange\tp-value')
     if exceptions / ITERATIONS <= .1:
         print(calculateEmpiricalP(obs_sum, final_exp_sum_list))
         print(f'iterations not completed: {exceptions}', file=sys.stderr)
