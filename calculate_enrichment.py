@@ -241,10 +241,6 @@ def calculateGC_blackListRegion(species, GC_resolution, GC_range, annotation):
     np_annotationGC = np.array(annotationGC)
     median = np.median(np_annotationGC)
 
-    # @TODO
-    # report GC content summary statistical data
-
-
     # finding regions in genome windows that fail to reach requirements
     upperGC = median * (1 + GC_range)
     lowerGC = median * (1 - GC_range)
@@ -261,7 +257,7 @@ def calculateGC_blackListRegion(species, GC_resolution, GC_range, annotation):
 
     genomeGC_blacklist_Object = BedTool(GC_blacklist)
 
-    return genomeGC_blacklist_Object
+    return genomeGC_blacklist_Object, np_annotationGC
 
 # 
 # caclulateExpected
@@ -409,8 +405,9 @@ def main(argv):
     '''
     # duplicate function for above code block with GC option enabled
     GC_blacklist = None
+    np_annotationGC = None
     if GC_CTRL_OPT:
-        GC_blacklist = calculateGC_blackListRegion(SPECIES, GC_CTRL_RESOLUTION, GC_CTRL_RANGE, BedTool(ANNOTATION_FILENAME))
+        GC_blacklist, np_annotationGC = calculateGC_blackListRegion(SPECIES, GC_CTRL_RESOLUTION, GC_CTRL_RANGE, BedTool(ANNOTATION_FILENAME))
     print("running calculateExpected_with_GC")
     pool = Pool(num_threads)
     partial_calcExp = partial(calculateExpected_with_GC, BedTool(ANNOTATION_FILENAME), BedTool(TEST_FILENAME), ELEMENT, HAPBLOCK, SPECIES, CUSTOM_BLIST, GC_CTRL_OPT, GC_blacklist)
@@ -425,6 +422,13 @@ def main(argv):
     final_exp_sum_list = [x for x in exp_sum_list if x >= 0]
     exceptions = exp_sum_list.count(-999)
 
+    # printing GC content statistics
+    if GC_CTRL_OPT:
+        print('The mean of the GC content in ANNOTATION file is: {0}'.format(str(np.mean(np_annotationGC))))
+        print('The median of the GC content in ANNOTATION file is: {0}'.format(str(np.median(np_annotationGC))))
+        print('The min and max value of the GC content in ANNOTATION file is: {0} and {1}'.format(str(np.min(np_annotationGC)), str(np.max(np_annotationGC))))
+        print('The 25th and 75th percentile of the GC content in ANNOTATION file is: {0} and {1}'.format(str(np.percentile(np_annotationGC, 25)), str(np.percentile(np_annotationGC, 75))))
+    
     # calculate empirical p value
     print('Observed\tExpected\tStdDev\tFoldChange\tp-value')
     if exceptions / ITERATIONS <= .1:
