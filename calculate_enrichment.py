@@ -240,9 +240,13 @@ def calculateGC_blackListRegion(species, GC_resolution, GC_range, annotation):
 
     # calculating GC content summary stats for annotation bed files 
     print("ending GC content calculation")
+    max_colNum = 0
+    for entry in annotationGC_result[0]:
+        max_colNum += 1
+
     annotationGC = []
     for entry in annotationGC_result:
-        annotationGC.append(float(entry[4])) 
+        annotationGC.append(float(entry[max_colNum - 8])) 
 
     np_annotationGC = np.array(annotationGC)
     median = np.median(np_annotationGC)
@@ -253,7 +257,7 @@ def calculateGC_blackListRegion(species, GC_resolution, GC_range, annotation):
 
     GC_blacklist = []
     for window in genomeGC_result:
-        if float(window[4]) < float(lowerGC) or float(window[4]) > float(upperGC):
+        if float(window[max_colNum - 8]) < float(lowerGC) or float(window[max_colNum - 8]) > float(upperGC):
             entry = []
             entry.append(window[0])
             entry.append(window[1])
