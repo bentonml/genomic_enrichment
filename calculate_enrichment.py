@@ -3,17 +3,18 @@
 #   name    | mary lauren benton
 #   created | 2017
 #   updated | 2018.10.09
-#           | 2018.10.11
-#           | 2018.10.29
-#           | 2019.02.01
-#           | 2019.04.08
-#           | 2019.06.10
-#           | 2019.11.05
-#           | 2021.02.24
+#             2018.10.11
+#             2018.10.29
+#             2019.02.01
+#             2019.04.08
+#             2019.06.10
+#             2019.11.05
+#             2021.02.24
 #
 #   name    | joseph yu
 #   updated | 2021.7.15
-#           | 2021.8.3
+#             2021.8.3
+#             2021.8.15
 #
 #   depends on:
 #       BEDtools v2.23.0-20 via pybedtools
@@ -199,12 +200,17 @@ def calculateObserved(annotation, test, elementwise, hapblock):
 #
 # Description:
 #       This function caclulates the blacklist regions from the GC content
-#       restrictions
+#       restrictions.
 #
 # input:
-#
+#       species:        The species that the bed files belong to
+#       GC_resolution:  The window size for the GC content calculation
+#       GC_range:       The range of tolerance for the GC content to vary (decimals)
+#       annotation:     bedtool object that contains the bed file regions
 #
 # output: 
+#       returns the calculated blacklist regions and list of GC content
+#       calculations
 #
 def calculateGC_blackListRegion(species, GC_resolution, GC_range, annotation):
     print("running calculateGC_blackListRegion")
@@ -260,45 +266,10 @@ def calculateGC_blackListRegion(species, GC_resolution, GC_range, annotation):
     return genomeGC_blacklist_Object, np_annotationGC
 
 # 
-# caclulateExpected
-#
-# updated | 2021.7.19
-#
-# Description:
-#       This function caclulates the expected intersection results with random
-#       shuffling
-#
-# input:
-#
-#
-# output: 
-#
-def calculateExpected(annotation, test, elementwise, hapblock, species, custom, iters):
-    BLACKLIST = loadConstants(species, custom)
-    exp_sum = 0
-
-    try:
-        rand_file = annotation.shuffle(genome=species, excl=BLACKLIST, chrom=True, noOverlapping=True)
-
-        if elementwise:
-            exp_sum = rand_file.intersect(test, u=True).count()
-        else:
-            exp_intersect = rand_file.intersect(test, wo=True)
-
-            if hapblock:
-                exp_sum = len(set(x[-2] for x in exp_intersect))
-            else:
-                for line in exp_intersect:
-                    exp_sum += int(line[-1])
-    except BEDToolsError:
-        exp_sum = -999
-
-    return exp_sum
-
-# 
 # caclulateExpected_with_GC
 #
 # updated | 2021.7.19
+#           2021.8.15
 #
 # Description:
 #       This function caclulates the expected intersection results with random
@@ -312,8 +283,7 @@ def calculateExpected(annotation, test, elementwise, hapblock, species, custom, 
 #       species:       species for the genome build used
 #       custom:        custom genome blacklist region file for shuffling
 #       GC_option:     flags for GC content controlled shuffling
-#       GC_range:
-#       GC_resolution:
+#       GC_blacklist:  bedtool object that contains the blacklisted regions by GC content
 #       iters:         number of iteration for the calculation
 #
 # output:
@@ -354,9 +324,9 @@ def calculateExpected_with_GC(annotation, test, elementwise, hapblock, species, 
     return exp_sum
 
 # 
-# caclulateExpected_with_GC
+# caclulateEmpiricalP
 #
-# updated | 
+# updated | 2021.8.16
 #
 # Description:
 #       This function caclulates empirical P value for the observed vs expected
@@ -396,14 +366,7 @@ def main(argv):
     print("runnning calculateOberved")
     obs_sum = calculateObserved(BedTool(ANNOTATION_FILENAME), BedTool(TEST_FILENAME), ELEMENT, HAPBLOCK)
 
-    # create pool and run simulations in parallel
-    '''
-    pool = Pool(num_threads)
-    partial_calcExp = partial(calculateExpected, BedTool(ANNOTATION_FILENAME), BedTool(TEST_FILENAME), ELEMENT, HAPBLOCK, SPECIES, CUSTOM_BLIST)
-    exp_sum_list = pool.map(partial_calcExp, [i for i in range(ITERATIONS)])
-
-    '''
-    # duplicate function for above code block with GC option enabled
+   # duplicate function for above code block with GC option enabled
     GC_blacklist = None
     np_annotationGC = None
     if GC_CTRL_OPT:
