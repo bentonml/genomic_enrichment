@@ -66,8 +66,13 @@ arg_parser.add_argument("--by_hap_block", action='store_true', default=False,
                         help='perform haplotype-block overlaps; default=False')
 
 arg_parser.add_argument("--GC_option", action='store_true', default=False,
-                        help='perform shuffling with regions of similar GC \
-                        content; default=False')
+                        help='perform shuffling with regions of similar GC content; default=False')
+
+arg_parser.add_argument("--GC_max", type=int, default=None, 
+                        help="custom max GC percent threshold (integer, ex: 80) for GC_option, must be used with --GC_min, default is --GC_margin default settings")
+
+arg_parser.add_argument("--GC_min", type=int, default=None, 
+                        help="custom min GC percent threshold (integer, ex: 20) for GC option, must be used with --GC_max, default is --GC_margin default settings")
 
 # 
 # restricted_float
@@ -118,6 +123,8 @@ CUSTOM_BLIST = args.blacklist
 GC_CTRL_OPT = args.GC_option
 GC_CTRL_RANGE = args.GC_margin
 GC_CTRL_RESOLUTION = args.GC_bp_resolution
+GC_MAX = args.GC_max
+GC_MIN = args.GC_min
 
 # calculate the number of threads
 if args.num_threads:
