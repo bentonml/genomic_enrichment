@@ -258,9 +258,14 @@ def calculateGC_blackListRegion(species, GC_resolution, GC_range, annotation):
     np_annotationGC = np.array(annotationGC)
     median = np.median(np_annotationGC)
 
-    # finding regions in genome windows that fail to reach requirements
-    upperGC = median * (1 + GC_range)
-    lowerGC = median * (1 - GC_range)
+    # finding regions in genome windows that fail to reach requirements 
+    if GC_MAX is not None and GC_MIN is not None:
+        upperGC = GC_MAX
+        lowerGC = GC_MIN
+    else:
+        print("Using median to set GC range")
+        upperGC = median * (1 + GC_range)
+        lowerGC = median * (1 - GC_range)
 
     GC_blacklist = []
     for window in genomeGC_result:
@@ -312,8 +317,13 @@ def calculateExpected_with_GC(annotation, test, elementwise, hapblock, species, 
             # writing to external file location
             print("running shuffle")
             bedFile = BedTool(BLACKLIST)
-            merged_blackList = bedFile.cat(GC_blacklist).saveas("./blackList.bed")
-            file_name = "./blackList.bed"
+            firstFilePath = ANNOTATION_FILENAME.split("/")
+            secondFilePath = TEST_FILENAME.split("/")
+            firstFile = firstFilePath[len(firstFilePath) - 1]
+            secondFile = secondFilePath[len(secondFilePath) - 1]
+            file_name = '{file1}s_{file2}.bed'.format(file1 = firstFile, file2 = secondFile)
+            file_name = file_name + '{date:%Y-%m-%d_%H:%M:%S}.bed'.format(date = datetime.datetime.now())
+            merged_blackList = bedFile.cat(GC_blacklist).saveas(file_name)
             rand_file = annotation.shuffle(genome=species, excl=file_name, chrom=True, noOverlapping=True)
 
         else:
@@ -370,6 +380,11 @@ def calculateEmpiricalP(obs, exp_sum_list):
 #   main
 ###
 def main(argv):
+
+    if ( GC_MAX is None and GC_MIN is not None ) or (GC_MAX is not None and GC_MIN is None):
+        print("Error: optons --GC_max and --GC_min must be used together")
+        exit(1)
+
     # print header
     print('python {:s} {:s}'.format(' '.join(sys.argv), str(datetime.datetime.now())[:20]))
 
