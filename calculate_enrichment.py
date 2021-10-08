@@ -256,6 +256,10 @@ def calculateGC_blackListRegion(species, GC_resolution, GC_range, annotation):
     for entry in annotationGC_result[0]:
         max_colNum += 1
 
+    genome_maxCol = 0
+    for entry in genomeGC_result[0]:
+        genome_maxCol += 1
+
     '''
     with open("genomeGC.bed", "w") as out:
         for window in genomeGC_result:
@@ -278,13 +282,16 @@ def calculateGC_blackListRegion(species, GC_resolution, GC_range, annotation):
     np_annotationGC = np.array(annotationGC)
     median = np.median(np_annotationGC)
 
-    #GenomeAnnotationGC = []
-    #for entry in genomeGC_result:
-    #    GenomeAnnotationGC.append(float(entry[max_colNum - 8]))
+    GenomeAnnotationGC = []
+    for entry in genomeGC_result:
+        GenomeAnnotationGC.append(float(entry[genome_maxCol - 8]))
 
-    #np_GenomeAnnotationGC = np.array(GenomeAnnotationGC)
-    #median_GenomeAnnotationGC = np.median(np_GenomeAnnotationGC)
-    #print("genome median: ", median_GenomeAnnotationGC)
+    np_GenomeAnnotationGC = np.array(GenomeAnnotationGC)
+    median_GenomeAnnotationGC = np.median(np_GenomeAnnotationGC)
+    mean_GenomeAnnotationGC = np.mean(np_GenomeAnnotationGC)
+    print("genome median: ", median_GenomeAnnotationGC)
+    print("genomeGC average: ", mean_GenomeAnnotationGC)   
+                                
 
     # finding regions in genome windows that fail to reach requirements
     if GC_MAX is not None and GC_MIN is not None:
@@ -298,7 +305,7 @@ def calculateGC_blackListRegion(species, GC_resolution, GC_range, annotation):
     GC_blacklist = []
     #GC_whitelist = []
     for window in genomeGC_result:
-        if float(window[max_colNum - 8]) >= float(lowerGC) and float(window[max_colNum - 8]) <= float(upperGC):
+        if float(window[genome_maxCol - 8]) >= float(lowerGC) and float(window[genome_maxCol - 8]) <= float(upperGC):
             #print("low: ", window[max_colNum - 8], upperGC, lowerGC, " - ", window[0], window[1], window[2])
             entry = []
             entry.append(window[0])
