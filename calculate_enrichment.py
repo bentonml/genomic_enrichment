@@ -252,13 +252,6 @@ def calculateGC_blackListRegion(species, GC_resolution, GC_range, annotation):
 
     # calculating GC content summary stats for annotation bed files
     print("ending GC content calculation")
-    max_colNum = 0
-    for entry in annotationGC_result[0]:
-        max_colNum += 1
-
-    genome_maxCol = 0
-    for entry in genomeGC_result[0]:
-        genome_maxCol += 1
 
     '''
     with open("genomeGC.bed", "w") as out:
@@ -277,20 +270,10 @@ def calculateGC_blackListRegion(species, GC_resolution, GC_range, annotation):
 
     annotationGC = []
     for entry in annotationGC_result:
-        annotationGC.append(float(entry[max_colNum - 8]))
+        annotationGC.append(float(entry[-8]))
 
     np_annotationGC = np.array(annotationGC)
     median = np.median(np_annotationGC)
-
-    GenomeAnnotationGC = []
-    for entry in genomeGC_result:
-        GenomeAnnotationGC.append(float(entry[genome_maxCol - 8]))
-
-    np_GenomeAnnotationGC = np.array(GenomeAnnotationGC)
-    median_GenomeAnnotationGC = np.median(np_GenomeAnnotationGC)
-    mean_GenomeAnnotationGC = np.mean(np_GenomeAnnotationGC)
-    print("genome median: ", median_GenomeAnnotationGC)
-    print("genomeGC average: ", mean_GenomeAnnotationGC)   
                                 
 
     # finding regions in genome windows that fail to reach requirements
@@ -305,7 +288,7 @@ def calculateGC_blackListRegion(species, GC_resolution, GC_range, annotation):
     GC_blacklist = []
     #GC_whitelist = []
     for window in genomeGC_result:
-        if float(window[genome_maxCol - 8]) >= float(lowerGC) and float(window[genome_maxCol - 8]) <= float(upperGC):
+        if float(window[-8]) >= float(lowerGC) and float(window[-8]) <= float(upperGC):
             #print("low: ", window[max_colNum - 8], upperGC, lowerGC, " - ", window[0], window[1], window[2])
             entry = []
             entry.append(window[0])
@@ -349,7 +332,7 @@ def calculateGC_blackListRegion(species, GC_resolution, GC_range, annotation):
     exit(1)
     '''
 
-    genomeGC_blacklist_Object = BedTool(GC_blacklist)
+    genomeGC_blacklist_Object = BedTool(GC_blacklist).merge()
 
     return genomeGC_blacklist_Object, np_annotationGC
 
@@ -385,6 +368,7 @@ def calculateExpected_with_GC(annotation, test, elementwise, hapblock, species, 
     try:
 
         if GC_CTRL_OPT:
+            print("iteration ", iters, end='\r')
             rand_file = annotation.shuffle(genome=species, incl=blackList_file_name, chrom=True, noOverlapping=True)
 
         else:
@@ -476,6 +460,8 @@ def main(argv):
 
             # subtracting regions that are blacklisted from the whitelist
             whitelist = GC_blacklist.subtract(bedFile).saveas(blackList_file_name)
+            
+            # blackList = GC_blacklist.cat(bedFile).saveas(blackList_file_name)
 
         else:
             blackList_file_name = GC_BLACKLIST
