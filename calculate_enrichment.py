@@ -12,9 +12,10 @@
 #             2021.02.24
 #
 #   name    | joseph yu
-#   updated | 2021.7.15
-#             2021.8.3
-#             2021.8.15
+#   updated | 2021.07.15
+#             2021.08.03
+#             2021.08.15
+#             2022.01.06
 #
 #   depends on:
 #       BEDtools v2.23.0-20 via pybedtools
@@ -133,7 +134,11 @@ GC_MIN = args.GC_min
 
 # calculate the number of threads
 if args.num_threads:
-    num_threads = args.num_threads
+    if args.num_threads >= 40:
+        print("Capping the thread count at 40.")
+        num_threads = 40
+    else:
+        num_threads = args.num_threads
 else:
     num_threads = int(os.getenv('SLURM_CPUS_PER_TASK', 1))
 
@@ -205,13 +210,15 @@ def calculateObserved(annotation, test, elementwise, hapblock):
                 obs_sum += int(line[-1])
 
     return obs_sum
+
+
 #
 # caclulateGCBlackListRegion
 #
 # updated | 2021.7.20
 #
 # Description:
-#       This function caclulates the blacklist regions from the GC content
+#       This function caclulates the whitelist regions from the GC content
 #       restrictions.
 #
 # input:
@@ -221,7 +228,7 @@ def calculateObserved(annotation, test, elementwise, hapblock):
 #       annotation:     bedtool object that contains the bed file regions
 #
 # output:
-#       returns the calculated blacklist regions and list of GC content
+#       returns the calculated whitelist regions and list of GC content
 #       calculations
 #
 def calculateGC_blackListRegion(species, GC_resolution, GC_range, annotation):
@@ -232,7 +239,7 @@ def calculateGC_blackListRegion(species, GC_resolution, GC_range, annotation):
                       'dm3'  : './genomeGC/dm3_manual.txt'
                       }[species]
 
-    # Splitting genome into specified bp windows (continuous)
+    # Splitting genome into specified bp windows (overlapping, coverageOverlap)
     print("running window maker")
     splitBed = BedTool()
     coverageOverlap = math.trunc(GC_resolution / 2)
@@ -253,28 +260,15 @@ def calculateGC_blackListRegion(species, GC_resolution, GC_range, annotation):
     # calculating GC content summary stats for annotation bed files
     print("ending GC content calculation")
 
-    '''
-    with open("genomeGC.bed", "w") as out:
-        for window in genomeGC_result:
-            entry = []
-            entry.append(window[0])
-            entry.append(window[1])
-            entry.append(window[2])
-            entry.append(window[max_colNum - 8])
-            out.write('\t'.join(entry) + '\n')
-    out.close()
-
-    exit(1)
-    '''
-
-
+    # calculating the median and extracting the GC content from
+    # nucleotide_content function (see pybedtools for return format, watch out
+    # for custom columns from BED files)
     annotationGC = []
     for entry in annotationGC_result:
         annotationGC.append(float(entry[-8]))
 
     np_annotationGC = np.array(annotationGC)
     median = np.median(np_annotationGC)
-                                
 
     # finding regions in genome windows that fail to reach requirements
     if GC_MAX is not None and GC_MIN is not None:
@@ -285,56 +279,19 @@ def calculateGC_blackListRegion(species, GC_resolution, GC_range, annotation):
         upperGC = median * (1 + GC_range)
         lowerGC = median * (1 - GC_range)
 
-    GC_blacklist = []
-    #GC_whitelist = []
+    GC_whitelist = []
     for window in genomeGC_result:
         if float(window[-8]) >= float(lowerGC) and float(window[-8]) <= float(upperGC):
-            #print("low: ", window[max_colNum - 8], upperGC, lowerGC, " - ", window[0], window[1], window[2])
             entry = []
             entry.append(window[0])
             entry.append(window[1])
             entry.append(window[2])
-            #entry.append(window[max_colNum - 8])
-
-            GC_blacklist.append(entry)
-        '''
-        else:
-            #print("high: ", window[max_colNum - 8], upperGC, lowerGC)
-            entry = []
-            entry.append(window[0])
-            entry.append(window[1])
-            entry.append(window[2])
-            #entry.append(window[max_colNum - 8])
 
             GC_whitelist.append(entry)
-        '''
-    '''
-    with open("whitelist.bed", "w") as out:
-        for window in GC_whitelist:
-            entry = []
-            entry.append(window[0])
-            entry.append(window[1])
-            entry.append(window[2])
-            entry.append(window[3])
-            out.write('\t'.join(entry) + '\n')
-    out.close()
 
-    with open("blacklist.bed", "w") as out:
-        for window in GC_blacklist:
-            entry = []
-            entry.append(window[0])
-            entry.append(window[1])
-            entry.append(window[2])
-            entry.append(window[3])
-            out.write('\t'.join(entry) + '\n')
-    out.close()
+    genomeGC_whitelist_Object = BedTool(GC_whitelist).sort().merge()
 
-    exit(1)
-    '''
-
-    genomeGC_blacklist_Object = BedTool(GC_blacklist).merge()
-
-    return genomeGC_blacklist_Object, np_annotationGC
+    return genomeGC_whitelist_Object, np_annotationGC
 
 #
 # caclulateExpected_with_GC
@@ -344,7 +301,9 @@ def calculateGC_blackListRegion(species, GC_resolution, GC_range, annotation):
 #
 # Description:
 #       This function caclulates the expected intersection results with random
-#       shuffling.
+#       shuffling. The GC option would use the BEDTOOLS object as a whitelist
+#       file, whereas the default option would use the passed in object as a
+#       blacklist file when running shuffling.
 #
 # input:
 #       annotation:    BEDTOOL object with the intersection called on
@@ -352,9 +311,6 @@ def calculateGC_blackListRegion(species, GC_resolution, GC_range, annotation):
 #       elementwise:   flags for elementwise calculation
 #       hapblock:      flags for haplotype-block overlaps
 #       species:       species for the genome build used
-#       custom:        custom genome blacklist region file for shuffling
-#       GC_option:     flags for GC content controlled shuffling
-#       GC_blacklist:  bedtool object that contains the blacklisted regions by GC content
 #       iters:         number of iteration for the calculation
 #
 # output:
@@ -368,7 +324,7 @@ def calculateExpected_with_GC(annotation, test, elementwise, hapblock, species, 
     try:
 
         if GC_CTRL_OPT:
-            print("iteration ", iters, end='\r')
+            print("iteration ", iters, end='\r', file=sys.stderr)
             rand_file = annotation.shuffle(genome=species, incl=blackList_file_name, chrom=True, noOverlapping=True)
 
         else:
@@ -384,6 +340,7 @@ def calculateExpected_with_GC(annotation, test, elementwise, hapblock, species, 
             else:
                 for line in exp_intersect:
                     exp_sum += int(line[-1])
+                    
     except BEDToolsError:
         exp_sum = -999
 
@@ -446,7 +403,7 @@ def main(argv):
     if GC_CTRL_OPT:
         bedFile = BedTool(BLACKLIST)
 
-        # Is custom GC blacklist provided
+        # Is custom GC whitelist provided
         if GC_BLACKLIST is None:
             GC_blacklist, np_annotationGC = calculateGC_blackListRegion(SPECIES, GC_CTRL_RESOLUTION, GC_CTRL_RANGE, BedTool(ANNOTATION_FILENAME))
 
@@ -459,8 +416,9 @@ def main(argv):
             blackList_file_name = blackList_file_name + '{date:%Y-%m-%d_%H:%M:%S}.bed'.format(date = datetime.datetime.now())
 
             # subtracting regions that are blacklisted from the whitelist
-            whitelist = GC_blacklist.subtract(bedFile).saveas(blackList_file_name)
-            
+            whitelist = GC_blacklist.subtract(bedFile).sort().merge().saveas(blackList_file_name)
+            # whitelist = GC_blacklist.subtract(bedFile).sort().merge().complement(genome='hg19').saveas(blackList_file_name)
+
             # blackList = GC_blacklist.cat(bedFile).saveas(blackList_file_name)
 
         else:
